@@ -1,0 +1,18 @@
+body {
+	display: grid;
+	height: 100vh;
+	margin: 0;
+	place-items: center center;
+}
+
+#theCanvas {
+	width: 400px;
+	height: 300px;
+	background-color: aqua;
+}
+
+#theVideo {
+	width: 400px;
+	height: 300px;
+	background-color: lime;
+}
