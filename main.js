@@ -10,6 +10,9 @@ let stream = null;
 let videoTrack = null;
 let body;
 let running = false;
+let inputStream = null;
+let streamWorker = null;
+let processor = null;
 const seconds = 10;
 
 
@@ -19,6 +22,12 @@ function main() {
 	startBtn.onclick = onStartBtn;
 	sequenceInput = document.getElementById("sequence");
 	body = document.body;
+	streamWorker = new Worker("encode_worker.js");
+
+	streamWorker.addEventListener('message', function(e) {
+		console.log('Worker msg: ' + e.data.text);
+	}, false);
+
 	startCameraCapture();
 }
 
@@ -37,13 +46,11 @@ async function startCameraCapture() {
 	stream = await getBetterCameraStream(); 
 	let [track] = stream.getVideoTracks();
 	let ts = track.getSettings();
-	const processor = new MediaStreamTrackProcessor(track);
-	inputStream = processor.readable;
+	processor = new MediaStreamTrackProcessor(track);
+	
 
-	// Create a MediaStreamTrackGenerator, which exposes a track from a
-	// WritableStream of VideoFrames, using non-standard Chrome API.
-	const generator = new MediaStreamTrackGenerator({kind: 'video'});
-	outputStream = generator.writable;
+	 const generator = new MediaStreamTrackGenerator({kind: 'video'});
+	 outputStream = generator.writable;
 
     let video = document.getElementById('theVideo');
     video.srcObject =  new MediaStream([generator]);;
@@ -66,17 +73,18 @@ async function getBetterCameraStream() {
 	};
 
 	return window.navigator.mediaDevices.getUserMedia(mediaConstraints);
-	// return new Promise( (resolve, reject) => {
-	// 	resolve();
-	// });
 }
 
 async function takeShot() {
 	let dark = lightSequenceArr[shotNumber] === "0";
 	body.style["background-color"] = dark ? "black" : "white";
-	console.log(`Dark ${dark} maxShots: ${maxShots} shotNumber: ${shotNumber}`);
-
-	shotNumber++;
+	inputStream = processor.readable;
+	console.log(`Dark ${dark} maxShots: ${maxShots} shotNumber: ${shotNumber} inputStream: ${inputStream.getReader()}`);
+	const reader = inputStream.getReader();
+	//const result = await reader.read();
+	// const frame = result.value;
+	// streamWorker.postMessage({ type: "frame", frame: frame });
+	// shotNumber++;
 	if (shotNumber >= maxShots) {
 		end();
 	}
@@ -86,6 +94,7 @@ function end() {
 	clearInterval(shotInterval);
 	running = false;
 	startBtn.disabled = false;
+	streamWorker.postMessage({ type: "stop" });
 }
 
 function validate(sequence) {
