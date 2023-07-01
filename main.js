@@ -88,6 +88,7 @@ async function startCameraCapture() {
 	let ts = track.getSettings();
 	config.width = ts.width;
 	config.height = ts.height;
+	output.innerHTML += `<br>Using: ${track.label}`;
 	const processor = new MediaStreamTrackProcessor(track);
 	const generator = new MediaStreamTrackGenerator({kind: 'video'});
 
@@ -98,7 +99,7 @@ async function startCameraCapture() {
     video = document.getElementById('theVideo');
     video.srcObject =  new MediaStream([generator]);;
 	video.play();
-	output.innerHTML = "press start";
+	output.innerHTML += "<br>Press start";
 }
 
 async function getBetterCameraStream() {
@@ -112,9 +113,11 @@ async function getBetterCameraStream() {
 	for (let i = 0; i < videoDevices.length; i++) {
 		const device = videoDevices.at(i);		
 		const userMedia = await getMediaDevice(device.deviceId);
-		output.innerHTML += "<br> " + device.deviceId;
 		const track = getTrack(userMedia);
 		const width = track.getSettings().width;
+		const height = track.getSettings().height;
+
+		output.innerHTML += `<br>[${width}, ${height}]  ${track.label}`;
 		if (width > maxWidth) {
 			maxWidth = width;
 			deviceId = device.deviceId;
@@ -142,7 +145,6 @@ async function getMediaDevice(deviceId){
 function getTrack(device) {
 	let [track] = device.getVideoTracks();
 	let ts = track.getSettings();
-	console.log(`settings ${JSON.stringify(ts)}`);
 	return track;
 }
 

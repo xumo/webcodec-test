@@ -1,4 +1,14 @@
 Testing WebCodecs
 -----------------
 
-Sijmple test for Webcodecs API
+This is an exercise to learn about the Webcode API present in the Chrome browser.
+
+First started with the encode-decode web worker from the oficial demo https://github.com/w3c/webcodecs/blob/main/samples/encode-decode-worker/js/stream_worker.js to later modified it to send a frame to the main thread on request. The original code takes care of starting, stopping and cleaning the video enconder and decoder. It also take care of the keyframe calculations for the video encoder, pretty nice.
+
+I additionaly query the user media dor the device with the best resolution to use.
+
+The functionality is simple:
+- start the encoder-decoder pipeline 
+- capture 20 frames while turning the background black and white
+- shut everything down
+- show the captured frames

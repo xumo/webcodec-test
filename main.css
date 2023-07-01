@@ -3,6 +3,14 @@ body {
 	height: 100vh;
 	margin: 0;
 	place-items: center center;
+	font-family: 'Courier New', Courier, monospace;
+	font-size: larger;
+	color: darkslategrey;
+}
+
+button {
+	font-family: 'Courier New', Courier, monospace;
+	font-size: large;
 }
 
 #theCanvas {
@@ -21,11 +29,11 @@ body {
 }
 
 #output {
-	position: absolute;
-	top: 0px;
+	position: relative;
+
 }
 
 .content {
 	z-index: 10;
-	width: 10%;
+	width: 30%;
 }
