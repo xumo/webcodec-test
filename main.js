@@ -16,6 +16,7 @@ let running = false;
 let inputStream = null;
 let context = null;
 let currentFrame = null;
+let output =  null;
 const streamWorker = new Worker("encode_worker.js");
 const seconds = 10;
 
@@ -30,12 +31,16 @@ const config = {
 
 
 function main() {  
+	output = document.getElementById("output");
 	if ('VideoEncoder' in window) {
 		console.log("WebCodecs API is supported.");
+		output.innerHTML = "WebCodecs API is supported. Use Chrome.";
 	} else {
 		alert("WebCodecs API not supported. Use Chrome.");
+		output.html = "WebCodecs API not supported. Use Chrome.";
 		return;
 	}
+	
 	startBtn = document.getElementById("startBtn");
 	startBtn.onclick = onStartBtn;
 	sequenceInput = document.getElementById("sequence");
@@ -64,6 +69,7 @@ function onStartBtn(event) {
 	shotNumber = 0;
 	let deltaTime = seconds * 1000 / maxShots;
 	shotInterval = setInterval(takeShot, deltaTime);
+	output.innerHTML = "";
 }
 
 const captureStream = {
@@ -77,7 +83,7 @@ const captureStream = {
 }
 
 async function startCameraCapture() {
-	stream = await getBetterCameraStream(); 
+	stream = await getBetterCameraStream();
 	let [track] = stream.getVideoTracks();
 	let ts = track.getSettings();
 	config.width = ts.width;
@@ -91,28 +97,53 @@ async function startCameraCapture() {
 	streamWorker.postMessage({ type: "stream", config: config, streams: {input: inputStream, output: outputStream}}, [inputStream, outputStream]);
     video = document.getElementById('theVideo');
     video.srcObject =  new MediaStream([generator]);;
-	video.play()	
+	video.play();
+	output.innerHTML = "press start";
 }
 
 async function getBetterCameraStream() {
-	const devices = await navigator.mediaDevices
-		.enumerateDevices();   
-	
+
+	output.innerHTML = "Testing for camera resoultions";
+	const devices = await navigator.mediaDevices.enumerateDevices();   
 	const videoDevices = devices.filter(device => device.kind === "videoinput");
-	videoDevices.forEach((device) => {	
-		console.log(`${device.kind}: ${device.label} id = ${device.deviceId}`);
-	});
-	const device = videoDevices.at(videoDevices.length - 1);
+
+	let maxWidth = 0;
+	let deviceId;
+	for (let i = 0; i < videoDevices.length; i++) {
+		const device = videoDevices.at(i);		
+		const userMedia = await getMediaDevice(device.deviceId);
+		output.innerHTML += "<br> " + device.deviceId;
+		const track = getTrack(userMedia);
+		const width = track.getSettings().width;
+		if (width > maxWidth) {
+			maxWidth = width;
+			deviceId = device.deviceId;
+		}
+		track.stop();
+	}
+
+	return getMediaDevice(deviceId);
+}
+
+async function getMediaDevice(deviceId){
 	const mediaConstraints = {
 		audio: false,
 		video: {
-			deviceId: device.deviceId,
+			deviceId: deviceId,
 			width: { ideal: 4096 },
-        	height: { ideal: 2160 } 
+			height: { ideal: 2160 },
+			facingMode: 'user'
 		}
 	};
 
 	return window.navigator.mediaDevices.getUserMedia(mediaConstraints);
+}
+
+function getTrack(device) {
+	let [track] = device.getVideoTracks();
+	let ts = track.getSettings();
+	console.log(`settings ${JSON.stringify(ts)}`);
+	return track;
 }
 
 async function takeShot() {
@@ -132,6 +163,9 @@ function end() {
 	running = false;
 	startBtn.disabled = false;
 	streamWorker.postMessage({ type: "stop" });
+	stream.getTracks().forEach(function(track) {
+		track.stop();
+	});
 	drawFrames();
 }
 
